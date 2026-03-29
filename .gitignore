@@ -1,10 +1,11 @@
-# Rust build artifacts
-core/target/
-
-# Go binary
+# Go binaries
 neohtop-cli
 neohtop-cli.exe
 neohtop-cli-*
+
+# npm install artifacts
+npm/bin/
+npm/node_modules/
 
 # OS files
 .DS_Store

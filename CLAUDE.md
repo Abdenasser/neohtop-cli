@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-NeoHtopCLI is a terminal-based process monitor — the CLI companion to [NeoHtop](https://github.com/Abdenasser/NeoHtop). It's built with Go (Bubble Tea v2 + Lip Gloss v2) and an optional Rust FFI backend.
+NeoHtopCLI is a terminal-based process monitor — the CLI companion to [NeoHtop](https://github.com/Abdenasser/NeoHtop). Built with Go (Bubble Tea v2 + Lip Gloss v2), pure Go system monitoring, and native OS APIs.
 
 ## Quick Reference
 
@@ -26,11 +26,9 @@ The app follows the **Elm architecture** (Model → Update → View) via Bubble 
 
 ```
 cli/
-├── main.go              # Entry point, --version flag
+├── main.go              # Entry point, --version/--json/--help flags
 ├── model/               # App state + update logic (Bubble Tea Model)
-│   ├── app.go           # Central model: state, keybindings, tick loop
-│   ├── process.go       # Process list management
-│   └── system.go        # System stats polling
+│   └── app.go           # Central model: state, keybindings, tick loop
 ├── view/                # All rendering (pure functions, no state mutation)
 │   ├── stats_bar.go     # CPU sparklines, memory, disk, network panels
 │   ├── toolbar.go       # Button-style keybinding hints (3-tier responsive)
@@ -49,18 +47,17 @@ cli/
 │   ├── process_icons.go # 140+ Nerd Font process icons
 │   └── layout.go        # Layout math
 ├── monitor/             # Platform-specific data collection
-│   ├── monitor.go       # Common interface
-│   ├── types.go         # ProcessInfo, SystemStats structs
+│   ├── monitor.go       # Common interface + Monitor struct
+│   ├── types.go         # ProcessInfo, SystemStats, delta structs
 │   ├── *_darwin.go      # macOS: libproc + mach APIs via CGo
 │   ├── *_linux.go       # Linux: /proc filesystem (pure Go)
-│   └── *_windows.go     # Windows: syscalls (pure Go)
+│   └── *_windows.go     # Windows: Win32 APIs (pure Go)
 ├── theme/               # 15 built-in color themes
 │   ├── theme.go         # Theme interface + registry
 │   └── catppuccin.go    # All theme definitions
-├── filter/              # Search (regex) and sort logic
+├── filter/              # Search (regex), sort, and process tree logic
 ├── config/              # Persistent config (~/.config/neohtop-cli/config.json)
-├── bridge/              # Rust FFI bridge (optional, unused in pure-Go mode)
-└── types/               # Shared type definitions
+└── types/               # Shared type definitions (Process, SystemStats, SortConfig)
 ```
 
 ## Key Conventions
@@ -92,6 +89,16 @@ cli/
 
 **New monitor metric:** Add field to `monitor/types.go`, implement per-platform in `*_darwin.go`, `*_linux.go`, `*_windows.go`.
 
+## Testing
+
+```bash
+make test                              # run all tests
+go test -count=1 ./filter/...          # run filter tests only
+go test -count=1 -run TestBuildProcess # run specific test
+```
+
+Tests cover: filter logic, sort ordering, process tree building, config save/load, type constants.
+
 ## Release
 
 Push a git tag to trigger the GitHub Actions release workflow:
@@ -101,4 +108,4 @@ git tag -a v0.1.0 -m "Initial release"
 git push --tags
 ```
 
-This builds binaries for macOS (arm64 + amd64), Linux (amd64 + arm64), and Windows (amd64), then creates a GitHub Release with checksums.
+This runs tests first, then builds binaries for macOS (arm64 + amd64), Linux (amd64 + arm64), and Windows (amd64), creates a GitHub Release with checksums, and publishes to npm + GitHub Packages.
