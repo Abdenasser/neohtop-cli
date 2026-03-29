@@ -77,6 +77,7 @@ func (h *Help) Render(width, height int) string {
 		section.Render("🖥️ Display"),
 		bind("f", "Filters"),
 		bind("c", "Columns"),
+		bind("T", "Tree view"),
 		bind("r", "Refresh rate"),
 		"",
 		section.Render("🖱️ Mouse"),

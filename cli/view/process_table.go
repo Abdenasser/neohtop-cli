@@ -67,6 +67,7 @@ type ProcessTable struct {
 	width      int
 	height     int
 	searchTerm string
+	treeMode   bool
 
 	// Cached column widths — only recomputed when width or columns change
 	cachedColWidths []int
@@ -89,6 +90,10 @@ func (pt *ProcessTable) SetSize(w, h int) {
 
 func (pt *ProcessTable) SetSearchTerm(term string) {
 	pt.searchTerm = term
+}
+
+func (pt *ProcessTable) SetTreeMode(enabled bool) {
+	pt.treeMode = enabled
 }
 
 // getColWidths returns cached column widths, recomputing only when width or columns change
@@ -330,24 +335,37 @@ func (pt *ProcessTable) buildRow(p types.Process, isPinned bool, globalIdx int, 
 		case "name":
 			icon := ProcessIcon(p.Name)
 			name := p.Name
+
+			// Tree prefix (e.g. "├─ ", "│  └─ ")
+			treeStr := ""
+			if pt.treeMode && p.TreePrefix != "" {
+				treeStyle := lipgloss.NewStyle().Foreground(pt.theme.Surface2)
+				treeStr = treeStyle.Render(p.TreePrefix)
+			}
+			treePrefixW := lipgloss.Width(treeStr)
+
 			prefix := ""
+			availW := w - treePrefixW
+			if availW < 4 {
+				availW = 4
+			}
 			if isPinned {
 				prefix = "📌"
-				if w > 5 {
-					name = Truncate(name, w-4) // icon(2) + pin(2)
+				if availW > 5 {
+					name = Truncate(name, availW-4) // icon(2) + pin(2)
 				}
-			} else if w > 3 {
-				name = Truncate(name, w-2)
+			} else if availW > 3 {
+				name = Truncate(name, availW-2)
 			} else {
-				name = Truncate(name, w)
+				name = Truncate(name, availW)
 			}
 			name = pt.highlightMatch(name)
 			if isPinned {
-				row = append(row, prefix+icon+" "+name)
-			} else if w > 3 {
-				row = append(row, icon+" "+name)
+				row = append(row, treeStr+prefix+icon+" "+name)
+			} else if availW > 3 {
+				row = append(row, treeStr+icon+" "+name)
 			} else {
-				row = append(row, name)
+				row = append(row, treeStr+name)
 			}
 		case "cpu":
 			pct := FormatPercentage(p.CPUUsage)

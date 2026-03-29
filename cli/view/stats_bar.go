@@ -178,23 +178,25 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 	spacer := strings.Repeat(" ", gap)
 
 	// btop-style panels with embedded titles in borders
+	// Each panel gets its own accent color from the theme
 	panels := []struct {
 		content string
 		title   string
 		width   int
 		icon    string
+		accent  color.Color
 	}{
-		{cpuContent, "cpu", cpuW, "🚀"},
-		{memContent, "mem", memW, "💾"},
-		{infoContent, "info", infoW, "ℹ️"},
-		{netContent, "net", netW, "🌐"},
+		{cpuContent, "cpu", cpuW, "🚀", th.Purple},
+		{memContent, "mem", memW, "💾", th.Blue},
+		{infoContent, "info", infoW, "ℹ️", th.Green},
+		{netContent, "net", netW, "🌐", th.Peach},
 	}
 
 	rendered := make([]string, len(panels))
 	maxH := 0
 
 	for i, p := range panels {
-		rendered[i] = s.renderBtopPanel(p.content, p.icon, p.title, p.width, 0, borderFg)
+		rendered[i] = s.renderBtopPanel(p.content, p.icon, p.title, p.width, 0, borderFg, p.accent)
 		h := lipgloss.Height(rendered[i])
 		if h > maxH {
 			maxH = h
@@ -203,7 +205,7 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 
 	// Re-render with equal height (subtract borders=2 + vertical padding=2)
 	for i, p := range panels {
-		rendered[i] = s.renderBtopPanel(p.content, p.icon, p.title, p.width, maxH-4, borderFg)
+		rendered[i] = s.renderBtopPanel(p.content, p.icon, p.title, p.width, maxH-4, borderFg, p.accent)
 	}
 
 	parts := make([]string, 0, len(rendered)*2-1)
@@ -246,9 +248,7 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 //   where contentW = width - 4  (2 border chars + 2 padding chars)
 //
 // The `content` string must already be rendered at contentW width.
-func (s *StatsBar) renderBtopPanel(content, icon, title string, width, height int, borderFg color.Color) string {
-	th := s.theme
-
+func (s *StatsBar) renderBtopPanel(content, icon, title string, width, height int, borderFg, accent color.Color) string {
 	// innerW = space between the two border columns (│)
 	innerW := width - 2
 	if innerW < 4 {
@@ -259,7 +259,7 @@ func (s *StatsBar) renderBtopPanel(content, icon, title string, width, height in
 
 	titleStr := " " + icon + " " + title + " "
 	titleRendered := lipgloss.NewStyle().
-		Foreground(th.Purple).
+		Foreground(accent).
 		Bold(true).
 		Render(titleStr)
 	titleW := lipgloss.Width(titleRendered)

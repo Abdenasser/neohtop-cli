@@ -1,3 +1,8 @@
+// Package bridge provides CGo bindings to the Rust core library.
+// DEPRECATED: This package is not currently used. NeoHtopCLI uses pure Go
+// monitoring via the monitor package instead. Kept for potential future use
+// if Rust-based monitoring is needed for platforms where Go's syscall coverage
+// is insufficient.
 package bridge
 
 /*

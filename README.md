@@ -17,6 +17,10 @@
 ---
 
 <p align="center">
+  <img src="assets/demo.gif" alt="NeoHtop CLI Demo" width="900" />
+</p>
+
+<p align="center">
   <img src="assets/neohtop-cli.JPG" alt="NeoHtop CLI Screenshot" width="900" />
 </p>
 
@@ -26,6 +30,8 @@
 - **Powerful search** — regex-powered filtering (`^chrome`, `name|pid`, `\.log$`) with live match highlighting
 - **15 built-in themes** — Catppuccin, Dracula, Tokyo Night, Nord, Gruvbox, Synthwave, and more
 - **Process management** — inspect details, kill processes, pin favorites to the top
+- **Process tree view** — toggle with `T` to see parent/child relationships with tree connectors
+- **JSON output** — `neohtop-cli --json` for scripting and piping to `jq`
 - **Responsive UI** — adapts from ultra-wide to 80-column terminals with smart compact modes
 - **Cross-platform** — macOS, Linux, and Windows support
 - **Single binary** — no dependencies, just download and run
@@ -155,6 +161,7 @@ That's it. NeoHtop CLI launches in your terminal with real-time system monitorin
 | `0`-`9` | Sort by column (shown in headers) |
 | `f` | Filter panel |
 | `c` | Column visibility |
+| `T` | Toggle process tree view |
 | `t` | Theme selector |
 | `r` | Cycle refresh rate (1s → 2s → 3s → 5s → 0.5s) |
 
@@ -202,6 +209,24 @@ NeoHtop CLI ships with 15 themes. Press `t` to open the theme selector with live
 | **High Contrast** | Accessibility-focused |
 | **Green Terminal** | Retro CRT green |
 | **Amber Terminal** | Retro CRT amber |
+
+## JSON Output
+
+Use `--json` to get a single snapshot of system stats and all processes as structured JSON. Perfect for scripting, monitoring pipelines, or custom dashboards:
+
+```bash
+# All processes using more than 5% CPU
+neohtop-cli --json | jq '.processes[] | select(.cpu_usage > 5)'
+
+# Top 10 by CPU usage
+neohtop-cli --json | jq '[.processes[] | {name, cpu: .cpu_usage}] | sort_by(.cpu) | reverse[:10]'
+
+# Current memory usage
+neohtop-cli --json | jq '.system | {memory_used, memory_total, pct: (.memory_used/.memory_total*100|round)}'
+
+# Watch mode (refresh every 2s)
+watch -n2 'neohtop-cli --json | jq ".system.cpu_usage_per_core"'
+```
 
 ## Configuration
 
@@ -275,7 +300,7 @@ NeoHtopCLI/
 │   ├── theme/                # 15 color themes
 │   ├── filter/               # Search, filter, and sort logic
 │   └── config/               # Persistent user settings
-├── core/                     # Rust static library (optional FFI backend)
+├── core/                     # Rust monitoring library (reference, not used in CLI build)
 ├── Makefile
 ├── README.md
 └── CONTRIBUTING.md
@@ -292,6 +317,8 @@ NeoHtopCLI/
 | Process details | ✅ | ✅ |
 | Kill processes | ✅ | ✅ |
 | Pin processes | ✅ | ✅ |
+| Process tree view | ❌ | ✅ |
+| JSON output (scripting) | ❌ | ✅ |
 | Themes | ✅ (12) | ✅ (15) |
 | Runs in terminal | ❌ | ✅ |
 | No Tauri/WebView needed | ❌ | ✅ |

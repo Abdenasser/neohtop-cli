@@ -18,6 +18,10 @@ type Process struct {
 	DiskRead      uint64
 	DiskWrite     uint64
 	SessionID     *uint32
+
+	// Tree view fields (set by BuildProcessTree)
+	TreePrefix string // e.g. "├─ ", "│  └─ "
+	TreeDepth  int    // nesting level (0 = root)
 }
 
 // ProcessDetail contains expensive fields fetched on-demand

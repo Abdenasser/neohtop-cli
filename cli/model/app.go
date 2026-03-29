@@ -48,6 +48,7 @@ type App struct {
 	searchTerm      string
 	searchMode      bool
 	isFrozen        bool
+	treeMode        bool
 	activeOverlay   types.OverlayType
 	selectedProcess *types.Process
 	selectedDetail  *types.ProcessDetail // lazy-loaded on overlay open
@@ -214,23 +215,20 @@ func (a *App) View() tea.View {
 	// === Main layout: StatsBar → ToolBar → ProcessTable ===
 	statsStr := a.statsBar.Render(a.systemStats, a.width)
 
-	// Determine if a process is selected and whether it's pinned (for toolbar hints)
+	toolbarStr := a.toolbar.Render(a.searchTerm, a.searchMode, a.sortConfig, a.isFrozen, len(a.filteredProcs), len(a.processes), a.width, a.cfg.RefreshRate, a.treeMode)
+
+	// Footer — includes selected process info + pin/info/kill actions
 	procs := a.pageProcesses()
 	hasSelection := a.cursor >= 0 && a.cursor < len(procs)
 	isPinned := false
-	if hasSelection {
-		isPinned = a.pinnedProcesses[procs[a.cursor].Command]
-	}
-	toolbarStr := a.toolbar.Render(a.searchTerm, a.searchMode, a.sortConfig, a.isFrozen, len(a.filteredProcs), len(a.processes), a.width, a.cfg.RefreshRate, hasSelection, isPinned)
-
-	// Footer
 	selectedPID := 0
 	selectedName := ""
-	if a.cursor >= 0 && a.cursor < len(a.filteredProcs) {
-		selectedPID = int(a.filteredProcs[a.cursor].PID)
-		selectedName = a.filteredProcs[a.cursor].Name
+	if hasSelection {
+		isPinned = a.pinnedProcesses[procs[a.cursor].Command]
+		selectedPID = int(procs[a.cursor].PID)
+		selectedName = procs[a.cursor].Name
 	}
-	footerStr := a.footer.Render(a.systemStats, selectedPID, selectedName, a.width)
+	footerStr := a.footer.Render(a.systemStats, selectedPID, selectedName, hasSelection, isPinned, a.width)
 
 	// Measure Y lines for mouse mapping
 	headerCombined := lipgloss.JoinVertical(lipgloss.Left, statsStr, toolbarStr)
@@ -244,6 +242,7 @@ func (a *App) View() tea.View {
 	a.processTable.SetSize(a.width, remainingHeight)
 
 	a.processTable.SetSearchTerm(a.searchTerm)
+	a.processTable.SetTreeMode(a.treeMode)
 	tableStr := a.processTable.Render(a.filteredProcs, a.cursor, a.scrollOffset, a.sortConfig, a.pinnedProcesses)
 
 	return a.newView(lipgloss.JoinVertical(lipgloss.Left, statsStr, toolbarStr, tableStr, footerStr))
@@ -474,6 +473,9 @@ func (a *App) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.toggleSort(types.SortByDisk)
 	case "0":
 		a.toggleSort(types.SortByThreads)
+	case "T":
+		a.treeMode = !a.treeMode
+		a.applyFiltersAndSort()
 	// Cycle refresh rate
 	case "r":
 		rates := []int{1000, 2000, 3000, 5000, 500}
@@ -681,7 +683,12 @@ func (a *App) killProcess(pid uint32) tea.Cmd {
 // Helpers
 func (a *App) applyFiltersAndSort() {
 	filtered := filter.FilterProcesses(a.processes, a.searchTerm, a.filterConfig)
-	a.filteredProcs = filter.SortProcesses(filtered, a.sortConfig, a.pinnedProcesses)
+	sorted := filter.SortProcesses(filtered, a.sortConfig, a.pinnedProcesses)
+	if a.treeMode {
+		a.filteredProcs = filter.BuildProcessTree(sorted)
+	} else {
+		a.filteredProcs = sorted
+	}
 
 	pageProcs := a.pageProcesses()
 	if a.cursor >= len(pageProcs) {

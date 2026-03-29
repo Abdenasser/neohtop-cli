@@ -25,7 +25,7 @@ func (t *Toolbar) SetTheme(th *theme.Theme) {
 	t.theme = th
 }
 
-func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortConfig, frozen bool, filtered, total, width, refreshMs int, hasSelection, isPinned bool) string {
+func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortConfig, frozen bool, filtered, total, width, refreshMs int, treeMode bool) string {
 	if width < 20 {
 		width = 80
 	}
@@ -59,15 +59,6 @@ func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortC
 			Foreground(th.Subtext1).
 			Padding(0, 1).
 			Render(text + " " + lipgloss.NewStyle().Foreground(th.Purple).Bold(true).Render("("+key+")"))
-		return pill
-	}
-
-	dangerBtn := func(text, key string) string {
-		pill := lipgloss.NewStyle().
-			Background(th.Surface0).
-			Foreground(th.Red).
-			Padding(0, 1).
-			Render(text + " " + lipgloss.NewStyle().Foreground(th.Red).Bold(true).Render("("+key+")"))
 		return pill
 	}
 
@@ -119,20 +110,7 @@ func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortC
 		dim.Render(" procs")
 	centerLen := lipgloss.Width(center)
 
-	// ── Right section: Process actions (contextual) + Cols, Pause, Sort, Theme, Help ──
-
-	var actionHints string
-	if hasSelection {
-		var pinHint string
-		if isPinned {
-			pinHint = btn("📌 Unpin", "u")
-		} else {
-			pinHint = btn("📌 Pin", "p")
-		}
-		infoHint := btn("ℹ️ Info", "i")
-		killHint := dangerBtn("☠️ Kill", "k")
-		actionHints = pinHint + " " + infoHint + " " + killHint + " "
-	}
+	// ── Right section: Cols, Pause, Sort, Theme, Help ──
 
 	colHint := btn("📊 Cols", "c")
 
@@ -151,10 +129,17 @@ func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortC
 	}
 	rateHint := btn(rateStr, "r")
 
+	var treeHint string
+	if treeMode {
+		treeHint = warnBtn("🌳 Tree", "T")
+	} else {
+		treeHint = btn("🌳 Tree", "T")
+	}
+
 	themeHint := btn("🎨 Theme", "t")
 	helpHint := btn("❓ Help", "?")
 
-	right := actionHints + colHint + " " + pauseHint + " " + rateHint + " " + themeHint + " " + helpHint
+	right := colHint + " " + treeHint + " " + pauseHint + " " + rateHint + " " + themeHint + " " + helpHint
 	rightLen := lipgloss.Width(right)
 
 	// ── Layout assembly ──────────────────────────────────────────────
