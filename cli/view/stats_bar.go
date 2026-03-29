@@ -216,15 +216,19 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 
 	panelsRow := lipgloss.JoinHorizontal(lipgloss.Top, parts...)
 
-	// ── Ghost emoji branding centered above panels ──
-	brand := lipgloss.NewStyle().
-		Foreground(th.Purple).
-		Bold(true).
-		Render("NeoHtop")
+	// ── Ghost emoji branding centered above panels with gradient ──
+	// Gradient branding: purple → pink → fuchsia
+	brandColors := []color.Color{th.Purple, th.Purple, th.Pink, th.Pink, th.Fuchsia, th.Fuchsia, th.Indigo}
+	brandText := "NeoHtop"
+	var brandChars string
+	for i, ch := range brandText {
+		c := brandColors[i%len(brandColors)]
+		brandChars += lipgloss.NewStyle().Foreground(c).Bold(true).Render(string(ch))
+	}
 	cli := lipgloss.NewStyle().
 		Foreground(th.Overlay0).
 		Render(" CLI")
-	brandStr := "👻 " + brand + cli
+	brandStr := "👻 " + brandChars + cli
 	brandW := lipgloss.Width(brandStr)
 	pad := (width - brandW) / 2
 	if pad < 0 {

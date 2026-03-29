@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/abdenasser/neohtop-cli/config"
 	"github.com/abdenasser/neohtop-cli/theme"
@@ -21,7 +22,7 @@ type columnSpec struct {
 var columnSpecs = map[string]columnSpec{
 	"pid":     {Min: 10, Ideal: 12, Priority: 0},     // "1·PID ⇅" needs ~10
 	"name":    {Min: 12, Ideal: 22, Priority: 3},     // icon + process names
-	"cpu":     {Min: 11, Ideal: 12, Priority: 0},     // "3·CPU% ⇅" needs ~11
+	"cpu":     {Min: 16, Ideal: 18, Priority: 0},     // "3·CPU% ⇅" needs ~11, + mini-bar
 	"memory":  {Min: 13, Ideal: 14, Priority: 1},     // "4·Memory ⇅" needs ~13
 	"status":  {Min: 13, Ideal: 14, Priority: 0},     // "5·Status ⇅" needs ~13
 	"user":    {Min: 11, Ideal: 16, Priority: 2},     // "6·User ⇅" needs ~11
@@ -61,10 +62,11 @@ var columnSortKeys = map[string]string{
 
 // ProcessTable renders the process list using Charm's lipgloss/table
 type ProcessTable struct {
-	theme  *theme.Theme
-	cfg    *config.Config
-	width  int
-	height int
+	theme      *theme.Theme
+	cfg        *config.Config
+	width      int
+	height     int
+	searchTerm string
 
 	// Cached column widths — only recomputed when width or columns change
 	cachedColWidths []int
@@ -83,6 +85,10 @@ func (pt *ProcessTable) SetTheme(th *theme.Theme) {
 func (pt *ProcessTable) SetSize(w, h int) {
 	pt.width = w
 	pt.height = h
+}
+
+func (pt *ProcessTable) SetSearchTerm(term string) {
+	pt.searchTerm = term
 }
 
 // getColWidths returns cached column widths, recomputing only when width or columns change
@@ -105,11 +111,12 @@ func (pt *ProcessTable) getColWidths() []int {
 
 func (pt *ProcessTable) Render(processes []types.Process, cursor, scrollOffset int, sortCfg types.SortConfig, pinned map[string]bool) string {
 	if len(processes) == 0 {
-		emptyStyle := lipgloss.NewStyle().
-			Foreground(pt.theme.Overlay0).
-			Padding(2, 2).
-			Italic(true)
-		return emptyStyle.Render("No processes found")
+		ghost := lipgloss.NewStyle().Foreground(pt.theme.Overlay0).Render("👻")
+		msg := lipgloss.NewStyle().Foreground(pt.theme.Overlay0).Italic(true).Render("No processes match your filters")
+		hint := lipgloss.NewStyle().Foreground(pt.theme.Overlay0).Render("Try adjusting search or filter criteria")
+		empty := ghost + "\n\n" + msg + "\n" + hint
+		box := lipgloss.NewStyle().Padding(3, 4).Width(pt.width).Align(lipgloss.Center)
+		return box.Render(empty)
 	}
 
 	// Calculate visible range
@@ -251,6 +258,28 @@ func (pt *ProcessTable) Render(processes []types.Process, cursor, scrollOffset i
 	return t.String()
 }
 
+// highlightMatch wraps matching substrings with accent coloring
+func (pt *ProcessTable) highlightMatch(s string) string {
+	if pt.searchTerm == "" {
+		return s
+	}
+	term := strings.ToLower(pt.searchTerm)
+	lower := strings.ToLower(s)
+	idx := strings.Index(lower, term)
+	if idx < 0 {
+		return s
+	}
+	// Highlight the match
+	hl := lipgloss.NewStyle().
+		Background(pt.theme.Surface1).
+		Foreground(pt.theme.Yellow).
+		Bold(true)
+	before := s[:idx]
+	match := s[idx : idx+len(pt.searchTerm)]
+	after := s[idx+len(pt.searchTerm):]
+	return before + hl.Render(match) + after
+}
+
 // buildHeaders creates header labels with sort indicators
 func (pt *ProcessTable) buildHeaders(sortCfg types.SortConfig) []string {
 	headers := make([]string, 0, len(pt.cfg.Columns))
@@ -300,14 +329,45 @@ func (pt *ProcessTable) buildRow(p types.Process, isPinned bool, globalIdx int, 
 			row = append(row, fmt.Sprintf("%d", p.PID))
 		case "name":
 			icon := ProcessIcon(p.Name)
-			// Icon takes 2 visual columns (icon + space), rest for name
-			if w > 3 {
-				row = append(row, icon+" "+Truncate(p.Name, w-2))
+			name := p.Name
+			prefix := ""
+			if isPinned {
+				prefix = "📌"
+				if w > 5 {
+					name = Truncate(name, w-4) // icon(2) + pin(2)
+				}
+			} else if w > 3 {
+				name = Truncate(name, w-2)
 			} else {
-				row = append(row, Truncate(p.Name, w))
+				name = Truncate(name, w)
+			}
+			name = pt.highlightMatch(name)
+			if isPinned {
+				row = append(row, prefix+icon+" "+name)
+			} else if w > 3 {
+				row = append(row, icon+" "+name)
+			} else {
+				row = append(row, name)
 			}
 		case "cpu":
-			row = append(row, FormatPercentage(p.CPUUsage))
+			pct := FormatPercentage(p.CPUUsage)
+			barW := 5
+			filled := int(p.CPUUsage / 100.0 * float32(barW*8))
+			fullBlocks := filled / 8
+			remainder := filled % 8
+			blocks := []string{"", "▏", "▎", "▍", "▌", "▋", "▊", "▉"}
+			bar := ""
+			for j := 0; j < fullBlocks && j < barW; j++ {
+				bar += "█"
+			}
+			if fullBlocks < barW && remainder > 0 {
+				bar += blocks[remainder]
+			}
+			// Pad the bar to barW using visual width
+			for lipgloss.Width(bar) < barW {
+				bar += " "
+			}
+			row = append(row, pct+" "+bar)
 		case "memory":
 			row = append(row, FormatBytes(p.MemoryUsage))
 		case "status":
@@ -315,7 +375,9 @@ func (pt *ProcessTable) buildRow(p types.Process, isPinned bool, globalIdx int, 
 		case "user":
 			row = append(row, Truncate(p.User, w))
 		case "command":
-			row = append(row, Truncate(p.Command, w))
+			cmd := Truncate(p.Command, w)
+			cmd = pt.highlightMatch(cmd)
+			row = append(row, cmd)
 		case "threads":
 			if p.Threads != nil {
 				row = append(row, fmt.Sprintf("%d", *p.Threads))

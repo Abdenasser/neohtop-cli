@@ -81,6 +81,15 @@ func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortC
 		return pill
 	}
 
+	// Emoji-only button for ultra-compact mode
+	iconBtn := func(emoji string) string {
+		return lipgloss.NewStyle().
+			Background(th.Surface0).
+			Foreground(th.Subtext1).
+			Padding(0, 0).
+			Render(emoji)
+	}
+
 	// ── Left section: Search + Filters ───────────────────────────────
 
 	var searchBox string
@@ -158,7 +167,24 @@ func (t *Toolbar) Render(searchTerm string, searchMode bool, sortCfg types.SortC
 		// Compact: just left + right, no center
 		gap := innerWidth - leftLen - rightLen
 		if gap < 1 {
-			gap = 1
+			// Super compact: emoji-only buttons
+			searchCompact := iconBtn("🔍")
+			filterCompact := iconBtn("🧪")
+			colCompact := iconBtn("📊")
+			pauseCompact := iconBtn("⏸")
+			if frozen {
+				pauseCompact = lipgloss.NewStyle().Background(th.Surface0).Foreground(th.Peach).Bold(true).Render("🧊")
+			}
+			themeCompact := iconBtn("🎨")
+			helpCompact := iconBtn("❓")
+			left = searchCompact + " " + filterCompact
+			right = colCompact + " " + pauseCompact + " " + themeCompact + " " + helpCompact
+			leftLen = lipgloss.Width(left)
+			rightLen = lipgloss.Width(right)
+			gap = innerWidth - leftLen - rightLen
+			if gap < 1 {
+				gap = 1
+			}
 		}
 		line = left + spaces(gap) + right
 	} else {

@@ -74,6 +74,7 @@ type App struct {
 	filterPanel  *view.FilterPanel
 	columnPanel  *view.ColumnPanel
 	themePanel   *view.ThemePanel
+	footer       *view.Footer
 
 	// Panel state
 	panelLine int
@@ -100,6 +101,7 @@ func NewApp(mon *monitor.Monitor) *App {
 		filterPanel:     view.NewFilterPanel(th),
 		columnPanel:     view.NewColumnPanel(th),
 		themePanel:      view.NewThemePanel(th),
+		footer:          view.NewFooter(th),
 	}
 }
 
@@ -180,7 +182,9 @@ func (a *App) newView(content string) tea.View {
 // View renders the UI — layout: StatsBar → ToolBar → ProcessTable
 func (a *App) View() tea.View {
 	if !a.ready {
-		return a.newView("\n  Loading system data...")
+		loading := lipgloss.NewStyle().Foreground(lipgloss.Color("#cba6f7")).Bold(true).Render("👻 NeoHtop CLI")
+		dots := lipgloss.NewStyle().Foreground(lipgloss.Color("#6c7086")).Render("Loading system data...")
+		return a.newView("\n\n" + lipgloss.PlaceHorizontal(a.width, lipgloss.Center, loading) + "\n" + lipgloss.PlaceHorizontal(a.width, lipgloss.Center, dots))
 	}
 
 	if a.err != nil {
@@ -219,20 +223,30 @@ func (a *App) View() tea.View {
 	}
 	toolbarStr := a.toolbar.Render(a.searchTerm, a.searchMode, a.sortConfig, a.isFrozen, len(a.filteredProcs), len(a.processes), a.width, a.cfg.RefreshRate, hasSelection, isPinned)
 
+	// Footer
+	selectedPID := 0
+	selectedName := ""
+	if a.cursor >= 0 && a.cursor < len(a.filteredProcs) {
+		selectedPID = int(a.filteredProcs[a.cursor].PID)
+		selectedName = a.filteredProcs[a.cursor].Name
+	}
+	footerStr := a.footer.Render(a.systemStats, selectedPID, selectedName, a.width)
+
 	// Measure Y lines for mouse mapping
 	headerCombined := lipgloss.JoinVertical(lipgloss.Left, statsStr, toolbarStr)
 	headerHeight := lipgloss.Height(headerCombined)
 	a.tableStartLine = headerHeight
 
-	remainingHeight := a.height - headerHeight
+	remainingHeight := a.height - headerHeight - 1
 	if remainingHeight < 5 {
 		remainingHeight = 5
 	}
 	a.processTable.SetSize(a.width, remainingHeight)
 
+	a.processTable.SetSearchTerm(a.searchTerm)
 	tableStr := a.processTable.Render(a.filteredProcs, a.cursor, a.scrollOffset, a.sortConfig, a.pinnedProcesses)
 
-	return a.newView(lipgloss.JoinVertical(lipgloss.Left, statsStr, toolbarStr, tableStr))
+	return a.newView(lipgloss.JoinVertical(lipgloss.Left, statsStr, toolbarStr, tableStr, footerStr))
 }
 
 // handleKeyPress processes keyboard input (Bubble Tea v2: KeyPressMsg)
@@ -768,6 +782,7 @@ func (a *App) applyTheme(name string) {
 	a.filterPanel.SetTheme(a.theme)
 	a.columnPanel.SetTheme(a.theme)
 	a.themePanel.SetTheme(a.theme)
+	a.footer.SetTheme(a.theme)
 	config.Save(a.cfg)
 }
 
