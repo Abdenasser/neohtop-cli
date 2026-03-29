@@ -3,8 +3,9 @@ neohtop-cli
 neohtop-cli.exe
 neohtop-cli-*
 
-# npm install artifacts
-npm/bin/
+# npm install artifacts (but keep the .js launcher)
+npm/bin/*
+!npm/bin/neohtop-cli.js
 npm/node_modules/
 
 # OS files
