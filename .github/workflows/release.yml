@@ -165,9 +165,8 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           npm version "$VERSION" --no-git-tag-version --allow-same-version
           mkdir -p bin
-          # Placeholder so npm doesn't warn about missing bin
-          printf '#!/bin/sh\necho "Run: npm install -g neohtop-cli"\n' > bin/neohtop-cli
-          chmod +x bin/neohtop-cli
+          # The real launcher (bin/neohtop-cli.js) is already in the repo.
+          # The postinstall script (install.js) downloads the actual binary into bin/.
           npm publish --access public
 
       - uses: actions/setup-node@v4

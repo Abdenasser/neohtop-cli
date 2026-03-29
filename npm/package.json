@@ -18,7 +18,7 @@
     "cli"
   ],
   "bin": {
-    "neohtop-cli": "bin/neohtop-cli"
+    "neohtop-cli": "bin/neohtop-cli.js"
   },
   "scripts": {
     "postinstall": "node install.js"
