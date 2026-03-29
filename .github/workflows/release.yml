@@ -154,13 +154,17 @@ jobs:
           chmod +x bin/neohtop-cli
           npm publish --access public
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@abdenasser"
+
       - name: Publish to GitHub Packages
         working-directory: npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Switch registry to GitHub Packages
-          npm config set registry https://npm.pkg.github.com
           # GitHub Packages requires scoped package name
           npm pkg set name="@abdenasser/neohtop-cli"
           npm publish --access public
