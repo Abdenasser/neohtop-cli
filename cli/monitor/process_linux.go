@@ -5,7 +5,6 @@ package monitor
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"

@@ -194,24 +194,32 @@ func (m *Monitor) collectMemoryStats(stats *SystemStats) {
 	}
 
 	stats.MemoryTotal = memTotal
-	stats.MemoryFree = memFree
-
-	// Used = Total - Free - Buffers - Cached - SReclaimable
-	used := memTotal
-	if memFree < used {
-		used -= memFree
-	}
-	if buffers < used {
-		used -= buffers
-	}
-	if cached < used {
-		used -= cached
-	}
-	if sReclaimable < used {
-		used -= sReclaimable
+	// MemAvailable is the best estimate of free memory for applications
+	if memAvailable > 0 {
+		stats.MemoryFree = memAvailable
+	} else {
+		stats.MemoryFree = memFree
 	}
 
-	stats.MemoryUsed = used
+	// Used = Total - Available (or fallback to manual calc)
+	if memAvailable > 0 {
+		stats.MemoryUsed = memTotal - memAvailable
+	} else {
+		used := memTotal
+		if memFree < used {
+			used -= memFree
+		}
+		if buffers < used {
+			used -= buffers
+		}
+		if cached < used {
+			used -= cached
+		}
+		if sReclaimable < used {
+			used -= sReclaimable
+		}
+		stats.MemoryUsed = used
+	}
 	stats.MemoryCached = cached
 }
 
