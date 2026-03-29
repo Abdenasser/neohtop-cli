@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.25.0"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goarch: amd64
+            suffix: linux-amd64
+          - goarch: arm64
+            suffix: linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build
+        working-directory: cli
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../neohtop-cli-${{ matrix.suffix }} .
+
+      - name: Compress binary
+        run: |
+          tar czf neohtop-cli-${{ matrix.suffix }}.tar.gz neohtop-cli-${{ matrix.suffix }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neohtop-cli-${{ matrix.suffix }}
+          path: neohtop-cli-${{ matrix.suffix }}.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - goarch: arm64
+            suffix: macos-arm64
+          - goarch: amd64
+            suffix: macos-amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build
+        working-directory: cli
+        env:
+          GOOS: darwin
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "1"
+        run: go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../neohtop-cli-${{ matrix.suffix }} .
+
+      - name: Compress binary
+        run: |
+          tar czf neohtop-cli-${{ matrix.suffix }}.tar.gz neohtop-cli-${{ matrix.suffix }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neohtop-cli-${{ matrix.suffix }}
+          path: neohtop-cli-${{ matrix.suffix }}.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build
+        working-directory: cli
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o ../neohtop-cli-windows-amd64.exe .
+
+      - name: Compress binary
+        shell: bash
+        run: |
+          7z a neohtop-cli-windows-amd64.zip neohtop-cli-windows-amd64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neohtop-cli-windows-amd64
+          path: neohtop-cli-windows-amd64.zip
+
+  release:
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum *.tar.gz *.zip > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/neohtop-cli-linux-amd64.tar.gz
+            artifacts/neohtop-cli-linux-arm64.tar.gz
+            artifacts/neohtop-cli-macos-arm64.tar.gz
+            artifacts/neohtop-cli-macos-amd64.tar.gz
+            artifacts/neohtop-cli-windows-amd64.zip
+            artifacts/checksums.txt

@@ -10,7 +10,15 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
+// version is set at build time via -ldflags
+var version = "dev"
+
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Printf("neohtop-cli %s\n", version)
+		os.Exit(0)
+	}
+
 	// Initialize the native Go monitor (reads OS interfaces directly — no FFI)
 	mon := monitor.New()
 	defer mon.Destroy()

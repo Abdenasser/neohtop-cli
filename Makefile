@@ -1,5 +1,7 @@
 .PHONY: all build clean test deps install
 
+VERSION ?= dev
+
 # Default target
 all: build
 
@@ -11,7 +13,7 @@ deps:
 # Build the Go CLI (pure Go — no Rust dependency)
 build:
 	@echo "Building NeoHtop CLI..."
-	cd cli && CGO_ENABLED=1 go build -o ../neohtop-cli .
+	cd cli && CGO_ENABLED=1 go build -ldflags="-s -w -X main.version=$(VERSION)" -o ../neohtop-cli .
 	@echo "Binary built: ./neohtop-cli"
 
 # Run Go tests
