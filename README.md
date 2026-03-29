@@ -1,236 +1,234 @@
-<h1 align="center">👻 NeoHtop CLI</h1>
+<div align="center">
 
-<p align="center">
-  <strong>A beautiful, feature-rich terminal process monitor</strong><br/>
-  The CLI companion to <a href="https://github.com/Abdenasser/NeoHtop">NeoHtop</a> — built with Go + the <a href="https://charm.sh">Charm</a> ecosystem
-</p>
+# 👻 NeoHtop CLI
 
-<p align="center">
-  <a href="#installation">Installation</a> •
-  <a href="#features">Features</a> •
-  <a href="#keybindings">Keybindings</a> •
-  <a href="#themes">Themes</a> •
-  <a href="#configuration">Configuration</a> •
-  <a href="#contributing">Contributing</a>
-</p>
+**A cross-platform terminal process monitor with btop-style visualizations**
 
----
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Release](https://img.shields.io/github/v/release/Abdenasser/neohtop-cli?color=purple)](https://github.com/Abdenasser/neohtop-cli/releases)
+[![npm](https://img.shields.io/npm/v/neohtop-cli?color=red)](https://www.npmjs.com/package/neohtop-cli)
 
-<p align="center">
-  <img src="assets/demo.gif" alt="NeoHtop CLI Demo" width="900" />
-</p>
+The CLI companion to [NeoHtop](https://github.com/Abdenasser/NeoHtop) — built with Go and the [Charm](https://charm.sh) ecosystem.
 
-<p align="center">
-  <img src="assets/neohtop-cli.JPG" alt="NeoHtop CLI Screenshot" width="900" />
-</p>
+[Installation](#installation) · [Features](#features) · [Keybindings](#keybindings) · [Themes](#themes) · [Configuration](#configuration)
 
-## Features
+<br/>
 
-- **Real-time monitoring** — CPU per-core sparklines, memory, disk I/O, and network stats with braille-dot visualizations
-- **Powerful search** — regex-powered filtering (`^chrome`, `name|pid`, `\.log$`) with live match highlighting
-- **15 built-in themes** — Catppuccin, Dracula, Tokyo Night, Nord, Gruvbox, Synthwave, and more
-- **Process management** — inspect details, kill processes, pin favorites to the top
-- **Process tree view** — toggle with `T` to see parent/child relationships with tree connectors
-- **JSON output** — `neohtop-cli --json` for scripting and piping to `jq`
-- **Responsive UI** — adapts from ultra-wide to 80-column terminals with smart compact modes
-- **Cross-platform** — macOS, Linux, and Windows support
-- **Single binary** — no dependencies, just download and run
+<img src="assets/demo.gif" alt="NeoHtop CLI Demo" width="820" />
+
+<br/>
+
+<img src="assets/neohtop-cli.JPG" alt="NeoHtop CLI Screenshot" width="820" />
+
+</div>
+
+<br/>
 
 ## Installation
-
-### npm (easiest)
 
 ```bash
 npm install -g neohtop-cli
 ```
 
-### Download a release
+Or download a prebuilt binary from the [Releases page](https://github.com/Abdenasser/neohtop-cli/releases):
 
-Grab the latest binary from the [Releases page](https://github.com/Abdenasser/neohtop-cli/releases):
+<details>
+<summary><b>macOS</b></summary>
 
-**macOS (Apple Silicon)**
 ```bash
+# Apple Silicon
 curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-macos-arm64.tar.gz
 tar xzf neohtop-cli-macos-arm64.tar.gz
 sudo mv neohtop-cli-macos-arm64 /usr/local/bin/neohtop-cli
-```
 
-**macOS (Intel)**
-```bash
+# Intel
 curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-macos-amd64.tar.gz
 tar xzf neohtop-cli-macos-amd64.tar.gz
 sudo mv neohtop-cli-macos-amd64 /usr/local/bin/neohtop-cli
 ```
 
-**Linux (x86_64)**
+</details>
+
+<details>
+<summary><b>Linux</b></summary>
+
 ```bash
+# x86_64
 curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-linux-amd64.tar.gz
 tar xzf neohtop-cli-linux-amd64.tar.gz
 sudo mv neohtop-cli-linux-amd64 /usr/local/bin/neohtop-cli
-```
 
-**Linux (ARM64)**
-```bash
+# ARM64
 curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-linux-arm64.tar.gz
 tar xzf neohtop-cli-linux-arm64.tar.gz
 sudo mv neohtop-cli-linux-arm64 /usr/local/bin/neohtop-cli
 ```
 
-**Windows (x86_64)**
+</details>
 
-Download `neohtop-cli-windows-amd64.zip` from the [latest release](https://github.com/Abdenasser/neohtop-cli/releases/latest), extract it, and add the folder to your PATH.
+<details>
+<summary><b>Windows</b></summary>
 
-### Build from source
+Download [`neohtop-cli-windows-amd64.zip`](https://github.com/Abdenasser/neohtop-cli/releases/latest) and add the extracted folder to your PATH.
 
-Requires [Go 1.25+](https://go.dev/dl) and a C compiler (gcc/clang) for CGo.
+</details>
+
+<details>
+<summary><b>Build from source</b></summary>
+
+Requires [Go 1.25+](https://go.dev/dl) and a C compiler for CGo on macOS.
 
 ```bash
 git clone https://github.com/Abdenasser/neohtop-cli.git
 cd neohtop-cli
 make build
-./neohtop-cli
+make install  # optional — copies to /usr/local/bin/
 ```
 
-To install to your PATH:
+</details>
 
-```bash
-make install  # copies to /usr/local/bin/
-```
+<br/>
+
+## Features
+
+<table>
+<tr>
+<td width="50%">
+
+**Real-time monitoring**
+CPU per-core sparklines, memory, disk I/O, and network stats rendered with braille-dot visualizations
+
+</td>
+<td width="50%">
+
+**Powerful search**
+Regex-powered filtering with live match highlighting — `^chrome`, `name|pid`, `\.log$`
+
+</td>
+</tr>
+<tr>
+<td>
+
+**15 built-in themes**
+Catppuccin, Dracula, Tokyo Night, Nord, Gruvbox, Synthwave, and more — switch with `t`
+
+</td>
+<td>
+
+**Process management**
+Inspect details, kill processes, pin favorites to the top, toggle tree view
+
+</td>
+</tr>
+<tr>
+<td>
+
+**JSON output**
+`neohtop-cli --json` pipes structured data to `jq` for scripting and dashboards
+
+</td>
+<td>
+
+**Single binary, cross-platform**
+macOS, Linux, and Windows — no runtime dependencies
+
+</td>
+</tr>
+</table>
+
+<br/>
 
 ## Quick Start
 
 ```bash
-./neohtop-cli
+neohtop-cli          # launch the TUI
+neohtop-cli --json   # one-shot JSON snapshot
+neohtop-cli --help   # see all options
 ```
 
-That's it. NeoHtop CLI launches in your terminal with real-time system monitoring. Press `?` to see all keybindings.
+Press `?` inside the TUI to see every keybinding.
 
-## UI Overview
-
-```
-👻 NeoHtop CLI                         ← gradient branding
-╭─ 🚀 cpu ──────╮╭─ 💾 mem ──╮╭─ ℹ️ info ─╮╭─ 🌐 net ──╮
-│ ⣿⣿⣶⣦ 45.2%    ││ RAM 67%   ││ Host     ││ ↓ 1.2MB/s │  ← stats panels
-│ per-core bars  ││ 8G/16G   ││ macOS    ││ ↑ 340KB/s │
-╰────────────────╯╰──────────╯╰──────────╯╰───────────╯
-╭─────────────────────────────────────────────────────────╮
-│ 🔍 Search (s)  🧪 Filters (f)  42/320 procs  ...       │  ← toolbar
-╰─────────────────────────────────────────────────────────╯
-╭─────────────────────────────────────────────────────────╮
-│ 1·PID  2·Name       3·CPU%       4·Memory  5·Status    │  ← sortable headers
-│ 1234   󰊯 chrome     45.2% ▋▋▎   1.2 GB    Running     │  ← with CPU mini-bars
-│ 5678   📌󰎙 node      12.0% ▎     340 MB    Running     │  ← pinned process
-│ ...                                                     │
-╰─────────────────────────────────────────────────────────╯
-🏠 hostname · macOS 15.3 · Darwin 24.3     ▸ PID 1234 chrome  ← footer
-```
+<br/>
 
 ## Keybindings
 
-### General
+| | Key | Action |
+|---|---|---|
+| **General** | `q` · `Ctrl+C` | Quit |
+| | `?` | Help overlay |
+| | `s` · `/` | Search (regex) |
+| | `Space` | Pause / resume |
+| | `Esc` | Close overlay / clear search |
+| **Navigate** | `↑` `↓` `j` `k` | Move selection |
+| | `PgUp` · `PgDn` | Page scroll |
+| | `Home` · `g` / `End` · `G` | Jump to top / bottom |
+| **Process** | `i` · `Enter` | Inspect details |
+| | `k` · `x` · `Del` | Kill (with confirmation) |
+| | `p` | Pin / unpin |
+| **Display** | `0`–`9` | Sort by column |
+| | `f` | Filter panel |
+| | `c` | Column visibility |
+| | `T` | Tree view |
+| | `t` | Theme selector |
+| | `r` | Cycle refresh rate |
+| **Mouse** | Click row | Select process |
+| | Double-click | Open details |
+| | Click header | Sort by column |
+| | Scroll wheel | Navigate list |
 
-| Key | Action |
-|-----|--------|
-| `q` / `Ctrl+C` | Quit |
-| `?` | Help overlay |
-| `s` / `/` | Search (regex) |
-| `Space` | Pause / resume updates |
-| `Esc` | Close overlay / clear search |
-
-### Navigation
-
-| Key | Action |
-|-----|--------|
-| `↑` `↓` `j` `k` | Move selection |
-| `PgUp` / `PgDn` | Scroll fast |
-| `Home` / `g` | Jump to top |
-| `End` / `G` | Jump to bottom |
-
-### Process Actions
-
-| Key | Action |
-|-----|--------|
-| `i` / `Enter` | Process details |
-| `k` / `x` / `Del` | Kill process (with confirmation) |
-| `p` | Pin / unpin process |
-
-### Display
-
-| Key | Action |
-|-----|--------|
-| `0`-`9` | Sort by column (shown in headers) |
-| `f` | Filter panel |
-| `c` | Column visibility |
-| `T` | Toggle process tree view |
-| `t` | Theme selector |
-| `r` | Cycle refresh rate (1s → 2s → 3s → 5s → 0.5s) |
-
-### Mouse
-
-| Action | Effect |
-|--------|--------|
-| Click row | Select process |
-| Double-click | Open details |
-| Click header | Sort by column |
-| Scroll wheel | Navigate list |
+<br/>
 
 ## Search
 
-NeoHtop CLI supports full regex search. Press `s` or `/` to start typing.
+Press `s` or `/` to search. Supports full regex:
 
-| Pattern | Matches |
-|---------|---------|
-| `chrome` | Processes containing "chrome" |
-| `^sys` | Names starting with "sys" |
-| `\.log$` | Commands ending in ".log" |
-| `name\|pid` | Processes matching "name" or "pid" |
-| `1234` | Process with PID 1234 |
+```
+chrome          process name contains "chrome"
+^sys            names starting with "sys"
+\.log$          commands ending in ".log"
+node|deno       matches either
+1234            PID 1234
+```
 
-Matching text is highlighted in yellow in the Name and Command columns.
+Matches are highlighted in yellow in the Name and Command columns.
+
+<br/>
 
 ## Themes
 
-NeoHtop CLI ships with 15 themes. Press `t` to open the theme selector with live color swatches.
+Press `t` to open the theme selector with live color swatches.
 
-| Theme | Style |
-|-------|-------|
-| **Charm** (default) | Tokyo Night-inspired dark |
-| **Catppuccin Mocha** | Warm dark pastels |
-| **Catppuccin Latte** | Light mode |
-| **Dracula** | Purple-focused dark |
-| **Tokyo Night** | Cool modern dark |
-| **Gruvbox Dark** | Retro warm tones |
-| **Nord** | Arctic blue dark |
-| **One Dark** | Atom editor theme |
-| **Rosé Pine** | Soft muted dark |
-| **Synthwave** | Cyberpunk neon |
-| **Solarized Dark** | Precision color science |
-| **Monokai Pro** | Classic editor dark |
-| **High Contrast** | Accessibility-focused |
-| **Green Terminal** | Retro CRT green |
-| **Amber Terminal** | Retro CRT amber |
+| | | |
+|---|---|---|
+| **Charm** *(default)* | **Catppuccin Mocha** | **Catppuccin Latte** |
+| **Dracula** | **Tokyo Night** | **Gruvbox Dark** |
+| **Nord** | **One Dark** | **Rosé Pine** |
+| **Synthwave** | **Solarized Dark** | **Monokai Pro** |
+| **High Contrast** | **Green Terminal** | **Amber Terminal** |
+
+<br/>
 
 ## JSON Output
 
-Use `--json` to get a single snapshot of system stats and all processes as structured JSON. Perfect for scripting, monitoring pipelines, or custom dashboards:
+`--json` outputs a single snapshot of system stats and all processes. Perfect for scripting:
 
 ```bash
-# All processes using more than 5% CPU
-neohtop-cli --json | jq '.processes[] | select(.cpu_usage > 5)'
-
-# Top 10 by CPU usage
+# top 10 by CPU
 neohtop-cli --json | jq '[.processes[] | {name, cpu: .cpu_usage}] | sort_by(.cpu) | reverse[:10]'
 
-# Current memory usage
+# memory usage
 neohtop-cli --json | jq '.system | {memory_used, memory_total, pct: (.memory_used/.memory_total*100|round)}'
 
-# Watch mode (refresh every 2s)
+# watch mode
 watch -n2 'neohtop-cli --json | jq ".system.cpu_usage_per_core"'
 ```
 
+<br/>
+
 ## Configuration
 
-Settings are persisted at `~/.config/neohtop-cli/config.json`:
+Settings persist at `~/.config/neohtop-cli/config.json`:
 
 ```json
 {
@@ -240,103 +238,99 @@ Settings are persisted at `~/.config/neohtop-cli/config.json`:
 }
 ```
 
-### Available Columns
+**Columns:** `pid` `name` `cpu` `memory` `status` `user` `command` `threads` `runtime` `disk`
 
-`pid`, `name`, `cpu`, `memory`, `status`, `user`, `command`, `threads`, `runtime`, `disk`
+**Refresh rates** — cycle with `r`: 1s *(default)* → 2s → 3s → 5s → 0.5s
 
-### Refresh Rates
-
-Cycle through with `r`: 1s (default) → 2s → 3s → 5s → 0.5s
+<br/>
 
 ## Architecture
 
-NeoHtop CLI is a pure Go application using native OS APIs for process and system monitoring.
+Pure Go application using native OS APIs — no FFI, no external dependencies.
 
 ```
-┌─────────────────────────────────────────┐
-│         Go TUI (Bubble Tea v2)          │
-│                                         │
-│  Stats Bar  │  Toolbar  │  Process Table│
-│  (sparklines, braille bars, panels)     │
-├─────────────────────────────────────────┤
-│         Native Go Monitor               │
-│  process_darwin.go  │  system_darwin.go  │
-│  process_linux.go   │  system_linux.go   │
-│  process_windows.go │  system_windows.go │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│          Go TUI (Bubble Tea v2)          │
+│                                          │
+│  Stats Bar · Toolbar · Process Table     │
+│  Sparklines · Braille Bars · Overlays    │
+├──────────────────────────────────────────┤
+│          Native Go Monitor               │
+│                                          │
+│  process_darwin.go   system_darwin.go    │
+│  process_linux.go    system_linux.go     │
+│  process_windows.go  system_windows.go   │
+└──────────────────────────────────────────┘
 ```
 
-### Tech Stack
+Built with [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) and [Lip Gloss v2](https://github.com/charmbracelet/lipgloss).
 
-- **TUI Framework**: [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) — Elm-inspired Go TUI
-- **Styling**: [Lip Gloss v2](https://github.com/charmbracelet/lipgloss) — CSS-like terminal styling
-- **Visualizations**: Braille dot-matrix (U+2800–U+28FF) for btop-style charts
-- **Table**: [lipgloss/table](https://github.com/charmbracelet/lipgloss) — responsive column layout
-
-### Project Structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
-NeoHtopCLI/
-├── cli/                      # Go application
-│   ├── main.go               # Entry point
-│   ├── model/                # Bubble Tea model (app state + update loop)
-│   ├── view/                 # UI components
-│   │   ├── stats_bar.go      # CPU, memory, network, info panels
-│   │   ├── toolbar.go        # Button bar with shortcuts
-│   │   ├── process_table.go  # Main data grid
-│   │   ├── footer.go         # Status footer
-│   │   ├── sparkline.go      # Time-series sparklines
-│   │   ├── bar.go            # Braille progress bars
-│   │   ├── help.go           # Keybinding reference overlay
-│   │   ├── process_details.go# Process info modal
-│   │   ├── kill_confirm.go   # Kill confirmation dialog
-│   │   ├── filter_panel.go   # Filter configuration
-│   │   ├── column_panel.go   # Column visibility toggle
-│   │   ├── theme_panel.go    # Theme selector with swatches
-│   │   ├── process_icons.go  # 140+ Nerd Font app icons
-│   │   ├── icons.go          # Unicode icon constants
-│   │   └── format.go         # Value formatting utilities
-│   ├── monitor/              # OS-specific system monitoring
-│   ├── theme/                # 15 color themes
-│   ├── filter/               # Search, filter, and sort logic
-│   └── config/               # Persistent user settings
-├── core/                     # Rust monitoring library (reference, not used in CLI build)
+neohtop-cli/
+├── cli/
+│   ├── main.go               # entry point + --json + --version
+│   ├── model/                 # Bubble Tea model (state + update loop)
+│   ├── view/                  # UI components
+│   │   ├── stats_bar.go       #   CPU, memory, network, info panels
+│   │   ├── process_table.go   #   main data grid
+│   │   ├── toolbar.go         #   button bar
+│   │   ├── footer.go          #   status bar
+│   │   ├── sparkline.go       #   time-series sparklines
+│   │   ├── bar.go             #   braille progress bars
+│   │   ├── help.go            #   keybinding overlay
+│   │   ├── process_details.go #   process info modal
+│   │   ├── kill_confirm.go    #   kill confirmation
+│   │   ├── filter_panel.go    #   filter configuration
+│   │   ├── column_panel.go    #   column visibility
+│   │   ├── theme_panel.go     #   theme selector
+│   │   └── process_icons.go   #   140+ Nerd Font icons
+│   ├── monitor/               # OS-specific system monitoring
+│   ├── theme/                 # 15 color themes
+│   ├── filter/                # search, filter, sort, tree
+│   └── config/                # persistent user settings
 ├── Makefile
-├── README.md
 └── CONTRIBUTING.md
 ```
 
-## Comparison with NeoHtop Desktop
+</details>
 
-| Feature | NeoHtop Desktop | NeoHtop CLI |
-|---------|----------------|-------------|
+<br/>
+
+## NeoHtop CLI vs NeoHtop Desktop
+
+| Feature | Desktop | CLI |
+|---|:---:|:---:|
 | Process monitoring | ✅ | ✅ |
-| CPU per-core stats | ✅ | ✅ (sparklines) |
+| CPU per-core stats | ✅ | ✅ |
 | Memory / Disk / Network | ✅ | ✅ |
-| Search (regex) | ✅ | ✅ (with highlighting) |
-| Process details | ✅ | ✅ |
-| Kill processes | ✅ | ✅ |
-| Pin processes | ✅ | ✅ |
-| Process tree view | ❌ | ✅ |
-| JSON output (scripting) | ❌ | ✅ |
-| Themes | ✅ (12) | ✅ (15) |
-| Runs in terminal | ❌ | ✅ |
-| No Tauri/WebView needed | ❌ | ✅ |
-| Single binary | ❌ | ✅ |
+| Regex search | ✅ | ✅ |
+| Kill / Pin / Inspect | ✅ | ✅ |
 | Mouse support | ✅ | ✅ |
+| Themes | 12 | **15** |
+| Process tree view | — | ✅ |
+| JSON scripting | — | ✅ |
+| Runs in terminal | — | ✅ |
+| Single binary | — | ✅ |
 
-## Related
+<br/>
 
-- [NeoHtop](https://github.com/Abdenasser/NeoHtop) — The desktop app (Tauri + Svelte)
-- [btop](https://github.com/aristocratos/btop) — Inspiration for the braille visualization style
-- [Bubble Tea](https://github.com/charmbracelet/bubbletea) — The TUI framework powering this project
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and how to add themes, icons, and keybindings.
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+[MIT](LICENSE)
 
----
+<br/>
 
-<p align="center">
-  Made with 👻 by <a href="https://github.com/Abdenasser">Abdenasser</a>
-</p>
+<div align="center">
+
+**[NeoHtop Desktop](https://github.com/Abdenasser/NeoHtop)** · **[Bubble Tea](https://github.com/charmbracelet/bubbletea)** · **[btop](https://github.com/aristocratos/btop)**
+
+Made with 👻 by [Abdenasser](https://github.com/Abdenasser)
+
+</div>
