@@ -133,3 +133,19 @@ jobs:
             artifacts/neohtop-cli-macos-amd64.tar.gz
             artifacts/neohtop-cli-windows-amd64.zip
             artifacts/checksums.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish to npm
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Sync version from git tag
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          mkdir -p bin
+          npm publish --access public

@@ -32,7 +32,13 @@
 
 ## Installation
 
-### Download a release (recommended)
+### npm (easiest)
+
+```bash
+npm install -g neohtop-cli
+```
+
+### Download a release
 
 Grab the latest binary from the [Releases page](https://github.com/Abdenasser/neohtop-cli/releases):
 

@@ -1,0 +1,30 @@
+{
+  "name": "neohtop-cli",
+  "version": "0.1.0",
+  "description": "A beautiful, feature-rich terminal process monitor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Abdenasser/neohtop-cli"
+  },
+  "homepage": "https://github.com/Abdenasser/neohtop-cli",
+  "author": "Abdenasser",
+  "license": "MIT",
+  "keywords": [
+    "htop",
+    "process-monitor",
+    "system-monitor",
+    "tui",
+    "terminal",
+    "cli"
+  ],
+  "bin": {
+    "neohtop-cli": "bin/neohtop-cli"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "files": [
+    "install.js",
+    "bin/"
+  ]
+}
