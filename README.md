@@ -32,30 +32,57 @@
 
 ## Installation
 
-### From source
+### Download a release (recommended)
+
+Grab the latest binary from the [Releases page](https://github.com/Abdenasser/neohtop-cli/releases):
+
+**macOS (Apple Silicon)**
+```bash
+curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-macos-arm64.tar.gz
+tar xzf neohtop-cli-macos-arm64.tar.gz
+sudo mv neohtop-cli-macos-arm64 /usr/local/bin/neohtop-cli
+```
+
+**macOS (Intel)**
+```bash
+curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-macos-amd64.tar.gz
+tar xzf neohtop-cli-macos-amd64.tar.gz
+sudo mv neohtop-cli-macos-amd64 /usr/local/bin/neohtop-cli
+```
+
+**Linux (x86_64)**
+```bash
+curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-linux-amd64.tar.gz
+tar xzf neohtop-cli-linux-amd64.tar.gz
+sudo mv neohtop-cli-linux-amd64 /usr/local/bin/neohtop-cli
+```
+
+**Linux (ARM64)**
+```bash
+curl -LO https://github.com/Abdenasser/neohtop-cli/releases/latest/download/neohtop-cli-linux-arm64.tar.gz
+tar xzf neohtop-cli-linux-arm64.tar.gz
+sudo mv neohtop-cli-linux-arm64 /usr/local/bin/neohtop-cli
+```
+
+**Windows (x86_64)**
+
+Download `neohtop-cli-windows-amd64.zip` from the [latest release](https://github.com/Abdenasser/neohtop-cli/releases/latest), extract it, and add the folder to your PATH.
+
+### Build from source
 
 Requires [Go 1.25+](https://go.dev/dl) and a C compiler (gcc/clang) for CGo.
 
 ```bash
 git clone https://github.com/Abdenasser/neohtop-cli.git
-cd neohtopcli
+cd neohtop-cli
 make build
 ./neohtop-cli
 ```
 
-### Install to PATH
+To install to your PATH:
 
 ```bash
 make install  # copies to /usr/local/bin/
-```
-
-### Cross-compilation
-
-```bash
-make build-linux-amd64    # Linux x86_64
-make build-linux-arm64    # Linux ARM64
-make build-macos-arm64    # macOS Apple Silicon
-make build-macos-amd64    # macOS Intel
 ```
 
 ## Quick Start
