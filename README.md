@@ -20,6 +20,10 @@
 
 ---
 
+<p align="center">
+  <img src="assets/neohtop-cli.JPG" alt="NeoHtop CLI Screenshot" width="900" />
+</p>
+
 ## Features
 
 - **Real-time monitoring** — CPU per-core sparklines, memory, disk I/O, and network stats with braille-dot visualizations
