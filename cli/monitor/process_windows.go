@@ -76,91 +76,87 @@ func (m *Monitor) collectProcesses(elapsed float64) []ProcessInfo {
 
 	// Iterate through processes
 	entry := PROCESSENTRY32{Size: uint32(unsafe.Sizeof(PROCESSENTRY32{}))}
-	ret, _, _ := procProcess32First.Call(uintptr(handle), uintptr(unsafe.Pointer(&entry)))
-	if ret == 0 {
+	r, _, _ := procProcess32First.Call(uintptr(handle), uintptr(unsafe.Pointer(&entry)))
+	if r == 0 {
 		return processes
 	}
 
 	for {
 		pid := entry.ProcessID
 
-		// Skip the idle process
-		if pid == 0 {
-			goto nextProcess
-		}
-
-		// Open the process to get more information
-		procHandle, err := windows.OpenProcess(
-			windows.PROCESS_QUERY_INFORMATION|windows.PROCESS_VM_READ,
-			false,
-			pid,
-		)
-		if err != nil {
-			goto nextProcess
-		}
-
-		threadCount := entry.Threads
-		proc := ProcessInfo{
-			PID:     pid,
-			PPID:    entry.ParentProcessID,
-			Name:    windows.UTF16ToString(entry.ExeFile[:]),
-			Threads: &threadCount,
-		}
-
-		// Get process times for CPU usage calculation
-		var creationTime, exitTime, kernelTime, userTime windows.Filetime
-		ret, _, _ := procGetProcessTimes.Call(
-			uintptr(procHandle),
-			uintptr(unsafe.Pointer(&creationTime)),
-			uintptr(unsafe.Pointer(&exitTime)),
-			uintptr(unsafe.Pointer(&kernelTime)),
-			uintptr(unsafe.Pointer(&userTime)),
-		)
-
-		if ret != 0 {
-			// Convert Filetime to 100-nanosecond intervals (Windows uses this natively)
-			userNano := userTime.Nanoseconds()
-			kernelNano := kernelTime.Nanoseconds()
-
-			// Calculate CPU usage from delta
-			proc.CPUUsage = calculateWindowsCPUUsage(m, pid, userNano, kernelNano, elapsed)
-
-			// Calculate start time (CreationTime is in Filetime format)
-			if bootTime > 0 {
-				creationUnix := filetime2Unix(creationTime)
-				proc.StartTime = creationUnix
-				if creationUnix > 0 {
-					now := uint64(time.Now().Unix())
-					if now > creationUnix {
-						proc.RunTime = now - creationUnix
-					}
-				}
+		// Skip the idle process; collect info for all others
+		if pid != 0 {
+			if proc, ok := m.collectSingleProcess(&entry, bootTime, elapsed); ok {
+				processes = append(processes, proc)
 			}
 		}
 
-		// Get memory usage
-		proc.MemoryUsage = getProcessMemoryUsage(procHandle)
-
-		// Get command line from process (basic, using ExeFile)
-		proc.Command = windows.UTF16ToString(entry.ExeFile[:])
-
-		// Get username from process token
-		proc.User = getProcessUser(procHandle)
-
-		// Status is always "Running" on Windows (no good way to get state without WMI)
-		proc.Status = "Running"
-
-		windows.CloseHandle(procHandle)
-		processes = append(processes, proc)
-
-	nextProcess:
-		ret, _, _ = procProcess32Next.Call(uintptr(handle), uintptr(unsafe.Pointer(&entry)))
-		if ret == 0 {
+		r, _, _ = procProcess32Next.Call(uintptr(handle), uintptr(unsafe.Pointer(&entry)))
+		if r == 0 {
 			break
 		}
 	}
 
 	return processes
+}
+
+// collectSingleProcess gathers info for one process from a snapshot entry.
+// Returns the ProcessInfo and true on success, or zero value and false on failure.
+func (m *Monitor) collectSingleProcess(entry *PROCESSENTRY32, bootTime uint64, elapsed float64) (ProcessInfo, bool) {
+	pid := entry.ProcessID
+
+	procHandle, err := windows.OpenProcess(
+		windows.PROCESS_QUERY_INFORMATION|windows.PROCESS_VM_READ,
+		false,
+		pid,
+	)
+	if err != nil {
+		return ProcessInfo{}, false
+	}
+	defer windows.CloseHandle(procHandle)
+
+	threadCount := entry.Threads
+	proc := ProcessInfo{
+		PID:     pid,
+		PPID:    entry.ParentProcessID,
+		Name:    windows.UTF16ToString(entry.ExeFile[:]),
+		Threads: &threadCount,
+	}
+
+	// Get process times for CPU usage calculation
+	var creationTime, exitTime, kernelTime, userTime windows.Filetime
+	ret, _, _ := procGetProcessTimes.Call(
+		uintptr(procHandle),
+		uintptr(unsafe.Pointer(&creationTime)),
+		uintptr(unsafe.Pointer(&exitTime)),
+		uintptr(unsafe.Pointer(&kernelTime)),
+		uintptr(unsafe.Pointer(&userTime)),
+	)
+
+	if ret != 0 {
+		userNano := userTime.Nanoseconds()
+		kernelNano := kernelTime.Nanoseconds()
+
+		proc.CPUUsage = calculateWindowsCPUUsage(m, pid, userNano, kernelNano, elapsed)
+
+		if bootTime > 0 {
+			creationUnix := filetime2Unix(creationTime)
+			proc.StartTime = creationUnix
+			if creationUnix > 0 {
+				now := uint64(time.Now().Unix())
+				if now > creationUnix {
+					proc.RunTime = now - creationUnix
+				}
+			}
+		}
+	}
+
+	proc.MemoryUsage = getProcessMemoryUsage(procHandle)
+	proc.Command = windows.UTF16ToString(entry.ExeFile[:])
+	proc.User = getProcessUser(procHandle)
+	proc.Status = "Running"
+
+	return proc, true
 }
 
 // getProcessDetail returns detailed information for a single process
