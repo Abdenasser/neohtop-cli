@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Abdenasser/neohtop-cli/main/assets/logo.png" alt="NeoHtop CLI" width="120" />
-</p>
-
 <h1 align="center">👻 NeoHtop CLI</h1>
 
 <p align="center">
