@@ -141,23 +141,88 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 		width = 80
 	}
 
-	// Flex ratios: CPU=2.5, Memory=2, Info=1.2, Network=1.2
-	// Merged Storage+System into a single "Info" panel for cleaner layout
-	totalFlex := 6.9
+	// ── Responsive layout ──────────────────────────────────────────
+	// Wide (≥180): 4 panels in a row  [cpu][mem][info][net]
+	// Medium (≥90): 2×2 grid          [cpu][mem] / [info][net]
+	// Narrow (<90): compact one-liner
 	gap := 1
-	availWidth := width - (3 * gap) // 3 gaps for 4 panels
+	spacer := strings.Repeat(" ", gap)
+	th := s.theme
+	borderFg := th.Surface1
 
-	cpuW := int(float64(availWidth) * 2.5 / totalFlex)
-	memW := int(float64(availWidth) * 2.0 / totalFlex)
-	infoW := int(float64(availWidth) * 1.2 / totalFlex)
-	netW := availWidth - cpuW - memW - infoW
+	type panelSpec struct {
+		render func(types.SystemStats, int) string
+		title  string
+		icon   string
+		accent color.Color
+		flex   float64
+	}
+	allPanels := []panelSpec{
+		{s.renderCPU, "cpu", "🚀", th.Purple, 2.5},
+		{s.renderMemory, "mem", "💾", th.Blue, 2.0},
+		{s.renderInfo, "info", "ℹ️", th.Green, 1.2},
+		{s.renderNetwork, "net", "🌐", th.Peach, 1.2},
+	}
 
-	if cpuW < 20 {
+	// Determine layout mode
+	type layoutMode int
+	const (
+		layoutWide   layoutMode = iota // 4 across
+		layoutGrid                     // 2×2
+		layoutCompact                  // single line
+	)
+
+	mode := layoutWide
+	if width < 180 {
+		mode = layoutGrid
+	}
+	if width < 90 {
+		mode = layoutCompact
+	}
+
+	if mode == layoutCompact {
 		return s.renderCompact(stats, width)
 	}
 
-	// Resize sparkline histories if terminal width changed significantly
-	sparkW := cpuW - 12 // approximate sparkline width per core
+	// ── Calculate panel widths based on layout mode ──
+	var rows [][]int // indices into allPanels per row
+
+	if mode == layoutWide {
+		rows = [][]int{{0, 1, 2, 3}}
+	} else {
+		// 2×2 grid: top row = cpu + mem, bottom row = info + net
+		rows = [][]int{{0, 1}, {2, 3}}
+	}
+
+	// Calculate widths for each row
+	type sized struct {
+		idx   int
+		width int
+	}
+	rowSized := make([][]sized, len(rows))
+
+	for ri, row := range rows {
+		numGaps := len(row) - 1
+		availWidth := width - (numGaps * gap)
+		totalFlex := 0.0
+		for _, pi := range row {
+			totalFlex += allPanels[pi].flex
+		}
+		rowSized[ri] = make([]sized, len(row))
+		used := 0
+		for ci, pi := range row {
+			w := int(float64(availWidth) * allPanels[pi].flex / totalFlex)
+			if ci == len(row)-1 {
+				w = availWidth - used // remainder goes to last panel
+			}
+			rowSized[ri][ci] = sized{pi, w}
+			used += w
+		}
+	}
+
+	// Resize sparkline histories based on CPU panel width
+	cpuW := rowSized[0][0].width
+	sparkW := cpuW - 12
 	if sparkW < 8 {
 		sparkW = 8
 	}
@@ -166,60 +231,44 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 		s.lastSparkWidth = sparkW
 	}
 
-	th := s.theme
-	borderFg := th.Surface1
+	// ── Render each row of panels ──
+	var rowStrings []string
 
-	// Content widths (subtract border 2 + padding 2 = 4)
-	cpuContent := s.renderCPU(stats, cpuW-4)
-	memContent := s.renderMemory(stats, memW-4)
-	infoContent := s.renderInfo(stats, infoW-4)
-	netContent := s.renderNetwork(stats, netW-4)
-
-	spacer := strings.Repeat(" ", gap)
-
-	// btop-style panels with embedded titles in borders
-	// Each panel gets its own accent color from the theme
-	panels := []struct {
-		content string
-		title   string
-		width   int
-		icon    string
-		accent  color.Color
-	}{
-		{cpuContent, "cpu", cpuW, "🚀", th.Purple},
-		{memContent, "mem", memW, "💾", th.Blue},
-		{infoContent, "info", infoW, "ℹ️", th.Green},
-		{netContent, "net", netW, "🌐", th.Peach},
-	}
-
-	rendered := make([]string, len(panels))
-	maxH := 0
-
-	for i, p := range panels {
-		rendered[i] = s.renderBtopPanel(p.content, p.icon, p.title, p.width, 0, borderFg, p.accent)
-		h := lipgloss.Height(rendered[i])
-		if h > maxH {
-			maxH = h
+	for _, row := range rowSized {
+		// Render panel contents
+		rendered := make([]string, len(row))
+		maxH := 0
+		for ci, s2 := range row {
+			p := allPanels[s2.idx]
+			content := p.render(stats, s2.width-4) // subtract border+padding
+			rendered[ci] = s.renderBtopPanel(content, p.icon, p.title, s2.width, 0, borderFg, p.accent)
+			h := lipgloss.Height(rendered[ci])
+			if h > maxH {
+				maxH = h
+			}
 		}
-	}
 
-	// Re-render with equal height (subtract borders=2 + vertical padding=2)
-	for i, p := range panels {
-		rendered[i] = s.renderBtopPanel(p.content, p.icon, p.title, p.width, maxH-4, borderFg, p.accent)
-	}
-
-	parts := make([]string, 0, len(rendered)*2-1)
-	for i, p := range rendered {
-		if i > 0 {
-			parts = append(parts, spacer)
+		// Re-render with equal height within this row
+		for ci, s2 := range row {
+			p := allPanels[s2.idx]
+			content := p.render(stats, s2.width-4)
+			rendered[ci] = s.renderBtopPanel(content, p.icon, p.title, s2.width, maxH-4, borderFg, p.accent)
 		}
-		parts = append(parts, p)
+
+		// Join panels horizontally
+		parts := make([]string, 0, len(rendered)*2-1)
+		for i, r := range rendered {
+			if i > 0 {
+				parts = append(parts, spacer)
+			}
+			parts = append(parts, r)
+		}
+		rowStrings = append(rowStrings, lipgloss.JoinHorizontal(lipgloss.Top, parts...))
 	}
 
-	panelsRow := lipgloss.JoinHorizontal(lipgloss.Top, parts...)
+	panelsBlock := strings.Join(rowStrings, "\n")
 
 	// ── Ghost emoji branding centered above panels with gradient ──
-	// Gradient branding: purple → pink → fuchsia
 	brandColors := []color.Color{th.Purple, th.Purple, th.Pink, th.Pink, th.Fuchsia, th.Fuchsia, th.Indigo}
 	brandText := "NeoHtop"
 	var brandChars string
@@ -238,7 +287,7 @@ func (s *StatsBar) Render(stats types.SystemStats, width int) string {
 	}
 	brandLine := strings.Repeat(" ", pad) + brandStr
 
-	return brandLine + "\n" + panelsRow
+	return brandLine + "\n" + panelsBlock
 }
 
 // renderBtopPanel creates a panel with the title embedded in the top border
